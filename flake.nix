@@ -51,6 +51,7 @@
               mkWrapper =
                 name: package:
                 "makeWrapper ${lib.getExe package} $out/bin/${name}"
+                + " "
                 + lib.concatMapAttrsStringSep " " (var: val: "--set ${var} ${val}") env;
             in
             pkgs.stdenvNoCC.mkDerivation {
