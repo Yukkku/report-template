@@ -50,8 +50,7 @@
               };
               mkWrapper =
                 name: package:
-                "makeWrapper ${lib.getExe package} $out/bin/${name}"
-                + " "
+                "makeWrapper ${lib.getExe package} $out/bin/${name} "
                 + lib.concatMapAttrsStringSep " " (var: val: "--set ${var} ${val}") env;
             in
             pkgs.stdenvNoCC.mkDerivation {
@@ -83,7 +82,7 @@
           pkgs = import nixpkgs { inherit system; };
         in
         {
-          default = pkgs.mkShell {
+          default = pkgs.mkShellNoCC {
             name = "devshell";
             packages = with pkgs; [
               nixd
