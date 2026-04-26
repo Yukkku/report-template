@@ -3,7 +3,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   };
   outputs =
-    { nixpkgs, ... }:
+    { nixpkgs, self, ... }:
     let
       lib = nixpkgs.lib;
       eachSystem = lib.genAttrs [
@@ -20,6 +20,11 @@
           pkgs = import nixpkgs { inherit system; };
         in
         {
+          icon = pkgs.buildTypstPackage (finalAttrs: {
+            pname = "icon";
+            version = "0.1.0";
+            src = ./icon;
+          });
           mkTypstEnv =
             {
               fonts ? [ ],
@@ -48,10 +53,13 @@
                 TYPST_PACKAGE_CACHE_PATH = "$out/lib/typst/packages";
                 TYPST_PACKAGE_PATH = "$out/lib/typst/packages";
               };
-              mkWrapper =
-                name: package:
-                "makeWrapper ${lib.getExe package} $out/bin/${name} "
-                + lib.concatMapAttrsStringSep " " (var: val: "--set ${var} ${val}") env;
+              mkWrapper = name: package: [
+                (
+                  "makeWrapper ${lib.getExe package} $out/bin/${name} "
+                  + lib.concatMapAttrsStringSep " " (var: val: "--set ${var} ${val}") env
+                )
+                "cp --no-preserve=all -r ${package}/share/* $out/share"
+              ];
             in
             pkgs.stdenvNoCC.mkDerivation {
               name = "typst-env";
@@ -61,7 +69,7 @@
                 lib.flatten [
                   "mkdir -p $out/bin"
                   "mkdir -p $out/lib/typst/packages"
-                  "cp -r ${pkgs.typst}/share $out/share"
+                  "mkdir $out/share"
                   (lib.mapAttrsToList (path: packages: [
                     "mkdir -p $out/lib/typst/packages/${path}"
                     (map (
@@ -87,6 +95,7 @@
             packages = with pkgs; [
               nixd
               nixfmt
+              (self.packages.${system}.mkTypstEnv { extraTypstScripts = { inherit tinymist; }; })
             ];
           };
         }
